@@ -3,7 +3,7 @@ package com.abstractinventions.bonza
 import unfiltered.netty.{ReceivedMessage, ServerErrorResponse, async}
 import unfiltered.request.{HttpRequest, Path}
 import java.net.URI
-import dispatch.{Http, url}
+import dispatch.{Req, Http, url}
 import unfiltered.response._
 import scala.collection.JavaConverters._
 import org.apache.commons.io.IOUtils
@@ -13,21 +13,23 @@ import unfiltered.response.Status
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.ning.http.client.Response
 
-class ReverseProxy(prefix: String, destination: String) extends async.Plan
+
+class ReverseProxy(prefix: String, destination: String, log:(Long,HttpRequest[Any], String, Response) => Unit) extends async.Plan
 with ServerErrorResponse {
-  val logger = org.clapper.avsl.Logger(getClass)
+
+
 
   def intent = {
-
     case req@Path(pathString) if pathString.startsWith(prefix) => {
+      val startTime = System.currentTimeMillis()
+      val proxiedRequest: Req = createProxiedRequest(pathString, req)
       for {
-        resp <- Http(createProxiedRequest(pathString, req))
+        resp <- Http(proxiedRequest)
       } {
+        log(startTime, req, proxiedRequest.url, resp)
         req.respond(proxyResponse(resp, req))
       }
     }
-    case _                                                     => Pass
-
   }
 
   /**
@@ -74,13 +76,11 @@ with ServerErrorResponse {
     if (requestUri.getQuery != null) {
       dest = dest + requestUri.getQuery
     }
-    logger.info(pathString + " -> " + dest)
-    val proxiedRequest = url(dest)
 
-    proxiedRequest.setMethod(req.method)
+    val proxiedRequest = url(dest).setMethod(req.method)
     req.headerNames.foreach(name => req.headers(name).foreach(value => proxiedRequest.addHeader(name, value)))
     proxiedRequest.setBody(IOUtils.toByteArray(req.inputStream))
-    proxiedRequest
+
   }
 
   def proxyResponse(resp: Response, req: HttpRequest[ReceivedMessage]): ResponseFunction[Any] = {
