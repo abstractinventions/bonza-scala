@@ -1,0 +1,10 @@
+A simple image proxy written in scala (mainly as a learning exercise).
+
+Provide the port to bind to as the first argument.
+
+Clients should execute a GET request to /i?u=<url>. The url specified in the u parameter will be fetched and streamed back to the client.
+
+e.g.
+
+http://localhost:<port>/i?u=http://images.url.com
+This file was modified by IntelliJ IDEA (Leda) IU-129.961 for binding GitHub repository
