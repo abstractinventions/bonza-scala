@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.security.MessageDigest
 
-case class LoadConfig
+case object LoadConfig
 
 case class WatchFile(file:File)
 
