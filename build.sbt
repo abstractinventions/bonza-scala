@@ -13,7 +13,6 @@ libraryDependencies ++= Seq(
     "net.databinder.dispatch" %% "dispatch-core" % "0.11.0",
     "com.typesafe.akka" %% "akka-actor" % "2.2.0",
     "commons-io" % "commons-io" % "2.4",
-    "org.clapper" %% "avsl" % "1.0.1",
     "net.databinder" %% "unfiltered-spec" % "0.6.8" % "test"
 )
 

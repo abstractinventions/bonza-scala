@@ -11,20 +11,25 @@ import java.security.MessageDigest
 
 case object LoadConfig
 
-case class WatchFile(file:File)
+case class WatchFile(file: File)
 
-case class Config(port:Int, handlers:Iterable[ReverseProxy])
+case class Config(port: Int, handlers: Iterable[ReverseProxy]) {
+
+  override def toString(): String = {
+    "port " + port + "" + handlers.foldLeft("") {(s: String, h: ReverseProxy) => s + "\n" + h.toString}
+  }
+}
 
 class ConfigActor(args: Array[String]) extends Actor {
   var server: ActorRef = context.actorOf(Props[ServerActor]);
   var configHash: String = null;
 
   def receive: Actor.Receive = {
-    case LoadConfig => {
-      val config:Config  = parseConfig(args)
+    case LoadConfig            => {
+      val config: Config = parseConfig(args)
       server ! Start(config)
     }
-    case WatchFile(file:File) => {
+    case WatchFile(file: File) => {
       val newHash = md5(file)
       if (configHash != newHash) {
         println("Config change detected.")
@@ -88,7 +93,7 @@ class ConfigActor(args: Array[String]) extends Actor {
     context.system.scheduler.schedule(10 seconds,
                                       5 seconds,
                                       self,
-                                      WatchFile(file) )
+                                      WatchFile(file))
 
   }
 
@@ -107,13 +112,17 @@ class ConfigActor(args: Array[String]) extends Actor {
         args2.toList
       }
     }
-    parts.map(p =>
-                if (p.indexOf("#") >= 0) {
-                  p.substring(p.indexOf("#"))
-                } else {p}
-             )
+    //strip comments,trim whitespace and remove blank lines
+    parts.map(p => stripComments(p))
     .map(_.trim())
     .filter(_.length > 0)
+  }
+
+
+  def stripComments(p: String): String = {
+    if (p.indexOf("#") >= 0) {
+      p.substring(0, p.indexOf("#"))
+    } else {p}
   }
 
   val usage = """Usage: bonza [filename |  port [-quiet] prefix1=resource1 [prefix2=resource2]...]

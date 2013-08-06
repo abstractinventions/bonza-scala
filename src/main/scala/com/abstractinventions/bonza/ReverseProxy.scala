@@ -17,6 +17,9 @@ import com.ning.http.client.Response
 class ReverseProxy(prefix: String, destination: String, log:(Long,HttpRequest[Any], String, Response) => Unit) extends async.Plan
 with ServerErrorResponse {
 
+  override def toString():String = {
+     prefix + " => " + destination
+  }
 
 
   def intent = {
